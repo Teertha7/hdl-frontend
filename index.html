@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Verilog Personal Playground</title>
+
+<!-- WaveDrom -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wavedrom/3.1.0/wavedrom.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/wavedrom/3.1.0/skins/default.js"></script>
+
+<style>
+/* ===== GLOBAL ===== */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    height: 100vh;
+    background: #1e1e1e;
+    color: #e6e6e6;
+    font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+/* ===== APP ===== */
+.app {
+    display: flex;
+    height: 100vh;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: 220px;
+    background: #181818;
+    border-right: 1px solid #2a2a2a;
+    padding: 12px 8px;
+}
+
+.sidebar-title {
+    font-size: 12px;
+    color: #8b949e;
+    margin-bottom: 12px;
+    padding-left: 10px;
+    text-transform: uppercase;
+}
+
+.sidebar-item {
+    padding: 10px 14px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #c9d1d9;
+}
+
+.sidebar-item:hover {
+    background: #262626;
+}
+
+.sidebar-item.active {
+    background: #2ea043;
+    color: white;
+}
+
+/* ===== WORKSPACE ===== */
+.workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== TOOLBAR ===== */
+.toolbar {
+    height: 56px;
+    background: linear-gradient(90deg, #2c2c2c, #252526);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    border-bottom: 1px solid #3c3c3c;
+}
+
+/* ===== BUTTON ===== */
+button {
+    background: linear-gradient(180deg, #2ea043, #238636);
+    color: white;
+    border: none;
+    padding: 8px 22px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ===== SIMULATION VIEW ===== */
+#simulation-view {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== EDITOR AREA ===== */
+.editor-area {
+    flex: 1;
+    display: flex;
+}
+
+/* ===== EDITOR PANEL ===== */
+.editor-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #333;
+}
+
+.editor-container:last-child {
+    border-right: none;
+}
+
+/* ===== FILE HEADER ===== */
+.editor-header {
+    height: 32px;
+    background: #252526;
+    border-bottom: 1px solid #333;
+    padding: 6px 14px;
+    font-size: 12px;
+    color: #9da0a6;
+}
+
+/* ===== TEXTAREA ===== */
+textarea {
+    flex: 1;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    padding: 14px;
+    font-family: Consolas, monospace;
+    font-size: 14px;
+    outline: none;
+    resize: none;
+}
+
+/* ===== CONSOLE ===== */
+#console {
+    height: 150px;
+    background: #0c0c0c;
+    color: #00ff88;
+    padding: 12px;
+    font-family: Consolas, monospace;
+    border-top: 1px solid #333;
+    overflow-y: auto;
+    white-space: pre-wrap;
+}
+
+/* ===== WAVEFORM POPUP ===== */
+#overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+}
+
+#popup {
+    display: none;
+    position: fixed;
+    top: 8%;
+    left: 5%;
+    width: 90%;
+    height: 75%;
+    background: white;
+    color: black;
+    border-radius: 10px;
+    padding: 16px;
+    z-index: 101;
+    overflow: auto;
+}
+
+.close-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body onload="WaveDrom.ProcessAll()">
+
+<div class="app">
+
+    <!-- ===== SIDEBAR ===== -->
+    <div class="sidebar">
+        <div class="sidebar-title">Actions</div>
+        <div class="sidebar-item active" id="sim-btn">▶ Run Simulation</div>
+        <div class="sidebar-item" id="syn-btn">🧱 Run Synthesis</div>
+    </div>
+
+    <!-- ===== WORKSPACE ===== -->
+    <div class="workspace">
+
+        <!-- ===== SIMULATION ===== -->
+        <div id="simulation-view">
+
+            <div class="toolbar">
+                <strong>Verilog Personal Playground</strong>
+                <button onclick="runSimulation()">Run Simulation</button>
+            </div>
+
+            <div class="editor-area">
+
+                <!-- Testbench -->
+                <div class="editor-container">
+                    <div class="editor-header">testbench.v</div>
+<textarea id="tb">
+module test;
+  reg clk, d;
+  wire q;
+
+  dff uut(clk, d, q);
+
+  initial begin
+    $dumpfile("dump.vcd");
+    $dumpvars(0, test);
+    clk = 0; d = 0;
+    forever #5 clk = ~clk;
+  end
+
+  initial begin
+    #12 d = 1;
+    #10 d = 0;
+    #20 d = 1;
+    #40 $finish;
+  end
+endmodule
+</textarea>
+                </div>
+
+                <!-- Design -->
+                <div class="editor-container">
+                    <div class="editor-header">design.v</div>
+<textarea id="design">
+module dff(input clk, d, output reg q);
+  always @(posedge clk) begin
+    q <= d;
+  end
+endmodule
+</textarea>
+                </div>
+
+            </div>
+
+            <div id="console">System Ready...</div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===== WAVEFORM OVERLAY ===== -->
+<div id="overlay" onclick="closePopup()"></div>
+
+<div id="popup">
+    <button class="close-btn" onclick="closePopup()">Close Waveform</button>
+    <div id="waveform-svg-container"></div>
+</div>
+
+<script>
+/* ===== ORIGINAL FUNCTIONAL CODE (UNCHANGED) ===== */
+
+async function runSimulation() {
+    const consoleBox = document.getElementById('console');
+    consoleBox.innerText = "Simulating...\n";
+
+    try {
+        const res = await fetch('https://hdl-backend-a39u.onrender.com/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                design: document.getElementById('design').value,
+                testbench: document.getElementById('tb').value
+            })
+        });
+        const data = await res.json();
+        consoleBox.innerText += data.log;
+
+        if (data.vcd) {
+            renderWaveform(data.vcd);
+        }
+    } catch (e) {
+        consoleBox.innerText += "\nError connecting to server.";
+    }
+}
+
+function renderWaveform(vcdText) {
+    const lines = vcdText.split('\n');
+    let signals = [];
+
+    lines.forEach(line => {
+        if (line.includes('$var wire')) {
+            const parts = line.trim().split(/\s+/);
+            signals.push({ id: parts[3], name: parts[4], wave: '' });
+        }
+    });
+
+    lines.forEach(line => {
+        const t = line.trim();
+        if (t.startsWith('#')) {
+            signals.forEach(s => s.wave += '.');
+        } else {
+            signals.forEach(s => {
+                if (t.endsWith(s.id)) {
+                    const val = t.charAt(0);
+                    s.wave = s.wave.slice(0, -1) + val;
+                }
+            });
+        }
+    });
+
+    const waveJSON = {
+        signal: signals.map(s => ({ name: s.name, wave: s.wave }))
+    };
+
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('popup').style.display = 'block';
+
+    const container = document.getElementById('waveform-svg-container');
+    container.innerHTML = "";
+
+    const script = document.createElement('script');
+    script.type = 'WaveDrom';
+    script.text = JSON.stringify(waveJSON);
+    container.appendChild(script);
+
+    WaveDrom.ProcessAll();
+}
+
+function closePopup() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('popup').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
+
+
